@@ -1,2 +1,0 @@
-# samuelnyamekye
-DerMeister Portfolio
