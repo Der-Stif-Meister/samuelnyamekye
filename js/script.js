@@ -1,7 +1,5 @@
-// =====================
-// FRONTEND FUNCTIONALITY
-// =====================
 
+// FRONTEND 
 // Mobile Menu Toggle
 const menuIcon = document.querySelector('#menu-icon');
 const navbar = document.querySelector('.navbar');
@@ -82,73 +80,51 @@ const typed = new Typed('.multiple-text', {
     loop: true
 });
 
-// =====================
-// BACKEND INTEGRATION
-// =====================
-
-// Enhanced Contact Form Submission
-const contactForm = document.querySelector('#contact form');
+// BACKEND
+// Contact Form Handling
+const contactForm = document.getElementById('contact-form');
 if (contactForm) {
-    contactForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const submitBtn = contactForm.querySelector('[type="submit"]');
-        const originalText = submitBtn.value;
-        
-        try {
-            // Disable button and show loading state
-            submitBtn.disabled = true;
-            submitBtn.value = 'Sending...';
-            
-            // Validate required fields
-            const requiredFields = contactForm.querySelectorAll('[required]');
-            let isValid = true;
-            
-            requiredFields.forEach(field => {
-                if (!field.value.trim()) {
-                    field.style.borderColor = 'red';
-                    isValid = false;
-                } else {
-                    field.style.borderColor = '';
-                }
-            });
-            
-            if (!isValid) {
-                alert('Please fill in all required fields');
-                return;
-            }
-            
-            // Prepare form data
-            const formData = new FormData(contactForm);
-            const data = Object.fromEntries(formData.entries());
-            
-            // Send to backend
-            const response = await fetch('/api/contact', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            });
-            
-            if (!response.ok) {
-                throw new Error('Failed to send message');
-            }
-            
-            // Success handling
-            alert('Message sent successfully!');
-            contactForm.reset();
-        } catch (error) {
-            console.error('Error:', error);
-            alert(error.message || 'Failed to send message. Please try again.');
-        } finally {
-            // Reset button state
-            submitBtn.disabled = false;
-            submitBtn.value = originalText;
-        }
-    });
+  contactForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const submitBtn = contactForm.querySelector('[type="submit"]');
+    const originalText = submitBtn.value;
+    
+    try {
+      // Show loading state
+      submitBtn.disabled = true;
+      submitBtn.value = 'Sending...';
+      
+      // Get form data
+      const formData = new FormData(contactForm);
+      const data = Object.fromEntries(formData.entries());
+      
+      // Send to backend
+      const response = await fetch('http://localhost:5000/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to send message');
+      }
+      
+      alert(result.message || 'Message sent successfully!');
+      contactForm.reset();
+    } catch (error) {
+      console.error('Error:', error);
+      alert(error.message || 'Failed to send message. Please try again.');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.value = originalText;
+    }
+  });
 }
-
 // Dynamic Projects Loading
 async function fetchProjects() {
     try {
