@@ -3,12 +3,20 @@ const router = express.Router();
 const nodemailer = require('nodemailer');
 const { body, validationResult } = require('express-validator');
 
-// Contact form submission
+// email transporter
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD
+  }
+});
+
+// Contact ending
 router.post('/', [
-  body('name').notEmpty().trim().escape(),
+  body('name').trim().notEmpty().withMessage('Name is required'),
   body('email').isEmail().normalizeEmail(),
-  body('subject').notEmpty().trim().escape(),
-  body('message').notEmpty().trim().escape()
+  body('message').trim().notEmpty().withMessage('Message is required')
 ], async (req, res) => {
   // Validate input
   const errors = validationResult(req);
@@ -16,38 +24,29 @@ router.post('/', [
     return res.status(400).json({ errors: errors.array() });
   }
 
-  const { name, email, subject, message } = req.body;
-
-  // Create transporter
-  let transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASSWORD
-    }
-  });
-
-  // Email options
-  const mailOptions = {
-    from: email,
-    to: process.env.CONTACT_EMAIL,
-    subject: `Portfolio Contact: ${subject}`,
-    text: `Name: ${name}\nEmail: ${email}\nMessage: ${message}`,
-    html: `
-      <h2>New Contact Form Submission</h2>
-      <p><strong>Name:</strong> ${name}</p>
-      <p><strong>Email:</strong> ${email}</p>
-      <p><strong>Message:</strong></p>
-      <p>${message}</p>
-    `
-  };
+  const { name, email, phone, subject, message } = req.body;
 
   try {
-    await transporter.sendMail(mailOptions);
+    // Send email
+    await transporter.sendMail({
+      from: email,
+      to: process.env.CONTACT_EMAIL,
+      subject: subject || 'New Contact Form Submission',
+      text: `Name: ${name}\nEmail: ${email}\nPhone: ${phone || 'Not provided'}\nMessage: ${message}`,
+      html: `
+        <h3>New Contact Form Submission</h3>
+        <p><strong>Name:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        ${phone ? `<p><strong>Phone:</strong> ${phone}</p>` : ''}
+        <p><strong>Message:</strong></p>
+        <p>${message}</p>
+      `
+    });
+
     res.status(200).json({ success: true, message: 'Message sent successfully!' });
   } catch (error) {
     console.error('Error sending email:', error);
-    res.status(500).json({ success: false, message: 'Error sending message' });
+    res.status(500).json({ success: false, message: 'Failed to send message' });
   }
 });
 
